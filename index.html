@@ -7,12 +7,11 @@
         body { background-color: #0b091a; color: #00f3ff; font-family: sans-serif; margin: 0; padding: 15px; }
         h1, h2, h3 { color: #ffff00; text-align: center; text-shadow: 0 0 10px #ff5500; }
         
-        /* 溶けてるFEVER文字のスタイル */
         #feverIndicator { 
             position: fixed; top: 10px; left: 15px; 
             font-size: 60px; font-weight: 900; 
             color: #ff0055; 
-            filter: url(#gooey); /* ここでリキッド効果を適用 */
+            filter: url(#gooey); 
             display: none; z-index: 100;
             pointer-events: none;
             animation: moveFEVER 2s infinite alternate;
@@ -38,7 +37,6 @@
 </head>
 <body>
 
-    <!-- リキッド効果のためのSVGフィルター -->
     <svg style="position: absolute; width: 0; height: 0;">
         <defs>
             <filter id="gooey">
@@ -85,6 +83,7 @@
             <button onclick="startQuiz()">👹 クイズを出題してもらう！</button>
         </div>
         <div id="questionArea" style="display:none;">
+            <p id="highClassBadge" style="display:none; color: #ff0000; font-weight: bold; font-size: 1.2em;">⚠️ エジソンの挑戦状（ハイクラス問題）発動中！</p>
             <p id="questionText" style="font-weight: bold; font-size: 16px;"></p>
             <div id="choicesArea"></div>
         </div>
@@ -93,10 +92,11 @@
 
     <div id="shopTab" class="box" style="display:none;">
         <h3>🛒 手助けショップ（訓練所）</h3>
-        <p>スコアを使って部隊を支援しよう！</p>
+        <p>スコアを使って部隊を支援しよう！（1ターンに買えるのは1個まで）</p>
         <button onclick="buyItem('arch')">🏹 遠隔攻撃支援 (100pt)</button>
         <button onclick="buyItem('shield')">🛡️ 仲間の復帰支援 (150pt)</button>
-        <button onclick="buyItem('horse')">🐎 突撃支援・敵2匹撃破 (200pt)</button>
+        <button onclick="buyItem('horse')">🐎 突撃支援 (200pt)</button>
+        <button onclick="buyItem('edison')" style="background: #e6b800; color: #000;">💡 エジソンの挑戦状 (100pt)</button>
         <p id="shopLog" style="color: #00ff80; font-weight: bold;"></p>
     </div>
 
@@ -106,54 +106,62 @@
 
 <script>
     const allQuestions = {
-        "社会・歴史": [
-            {q: "日本国憲法で、政治を行う基本原則の一つである「国民主権」「基本的人権の尊重」ともう一つは何？", choices: ["平和主義", "効率主義", "自由競争"], ans: "平和主義"},
-            {q: "衆議院と参議院の両方で成り立っている、法律を作る機関を何と言う？", choices: ["国会", "内閣", "裁判所"], ans: "国会"},
-            {q: "裁判所が持つ、法律や条令が憲法に違反していないかなどを判断する権利を何と言う？", choices: ["司法権", "立法権", "行政権"], ans: "司法権"},
-            {q: "縄文時代のあとに続き、大陸から稲作が伝わった時代の名前は？", choices: ["弥生時代", "古墳時代", "飛鳥時代"], ans: "弥生時代"},
-            {q: "聖徳太子が作った、役人の心構えや道徳を示した17のきまりを何と言う？", choices: ["十七条憲法", "冠位十二階", "大化の改新"], ans: "十七条憲法"},
-            {q: "645年に始まった、中大兄皇子や中臣鎌足らによる政治の改革を何と言う？", choices: ["大化の改新", "明治維新", "建武の新政"], ans: "大化の改新"},
-            {q: "奈良時代に聖武天皇によって建立された、世界最大級の青銅の仏像があるお寺の名前は？", choices: ["東大寺", "法隆寺", "清水寺"], ans: "東大寺"},
-            {q: "794年に京都へ都を移した天皇は誰？", choices: ["桓武天皇", "聖武天皇", "明治天皇"], ans: "桓武天皇"},
-            {q: "聖武天皇が、仏教の力で国を護るために全国の国ごとに建てさせたお寺を何と言う？", choices: ["国分寺", "法隆寺", "東大寺"], ans: "国分寺"},
-            {q: "室町時代に京都の北山に建てられた、金箔が貼られた美しい建物の名前は？", choices: ["金閣寺", "銀閣寺", "東大寺"], ans: "金閣寺"}
-        ],
-        "理科": [
-            {q: "植物が日光を受けて、二酸化炭素と水から養分と酸素を作り出す働きを何と言う？", choices: ["光合成", "呼吸", "蒸散"], ans: "光合成"},
-            {q: "ヒトの体で、血液を全身に送り出すポンプの役割をしている臓器はどれ？", choices: ["心臓", "肺", "胃"], ans: "心臓"},
-            {q: "水溶液に溶けているものが、水から出てくるときに規則正しい形の固体になることを何と言う？", choices: ["結晶", "溶解", "飽和"], ans: "結晶"},
-            {q: "空気中で物が燃えるとき、燃えるのをはたらきかける気体はどれ？", choices: ["酸素", "二酸化炭素", "窒素"], ans: "酸素"},
-            {q: "リトマス紙を使って、アルカリ性を示すと何色に変わる？", choices: ["青色", "赤色", "黄色"], ans: "青色"},
-            {q: "月が太陽と地球の間に入り、太陽がかくされる現象を何と言う？", choices: ["日食", "月食", "満月"], ans: "日食"},
-            {q: "ヒトの消化器官で、食べた物を胃から送られてさらに消化・吸収を進める長くて細い管を何と言う？", choices: ["小腸", "大腸", "食道"], ans: "小腸"},
-            {q: "食塩などを水に溶かしたとき、溶かす前の全体の重さと、溶かした後の水溶液の重さはどうなる？", choices: ["変わらない", "軽くなる", "重くなる"], ans: "変わらない"},
-            {q: "水溶液にものを溶かしたとき、溶けているものの全体の重さを何と言う？", choices: ["質量", "体積", "密度"], ans: "質量"},
-            {q: "太陽系の中で、地球のすぐ外側（火星の次）を回っている、一番大きな惑星の名前は？", choices: ["木星", "土星", "金星"], ans: "木星"}
-        ],
-        "算数": [
-            {q: "半径が 7cm の円の面積を求める公式「半径×半径×円周率」で、円周率を3.14としたときの計算結果は？", choices: ["153.86cm²", "43.96cm²", "21.98cm²"], ans: "153.86cm²"},
-            {q: "時速60kmの自動車が、2時間30分に進む距離は何km？", choices: ["150km", "120km", "180km"], ans: "150km"},
-            {q: "分数のかけ算で、(2/3) × (3/4) の計算結果は？", choices: ["1/2", "6/7", "5/12"], ans: "1/2"},
-            {q: "分数的わり算で、(4/5) ÷ (2/3) の計算結果として正しいものは？", choices: ["6/5（1と1/5）", "8/15", "2/5"], ans: "6/5（1と1/5）"},
-            {q: "点対称な図形について、対称の中心を通る直線で折ったとき、対応する点はどうなる？", choices: ["ぴったり重なる", "重ならない", "反対側に行く"], ans: "ぴったり重なる"},
-            {q: "縦4cm、横5cm、高さ3cmの直方体の体積は何cm³？", choices: ["60cm³", "12cm³", "40cm³"], ans: "60cm³"},
-            {q: "20人のクラスで、男子が12人のとき、女子の割合は全体に対して何パーセント？", choices: ["40%", "60%", "50%"], ans: "40%"},
-            {q: "底辺が6cm、高さが5cmの三角形の面積は何cm²？", choices: ["15cm²", "30cm²", "11cm²"], ans: "15cm²"},
-            {q: "帯分数 2 と 1/3 を仮分数になおすとどうなる？", choices: ["7/3", "5/3", "6/3"], ans: "7/3"},
-            {q: "1.5L のジュースを 0.3Lずつコップに分けると、何杯分になる？", choices: ["5杯", "3杯", "4杯"], ans: "5杯"}
-        ],
-        "国語・漢字": [
-            {q: "漢字「偉大」の「偉」の正しい読み方は？", choices: ["い", "き", "え"], ans: "い"},
-            {q: "漢字「組織」の「組」の部首の名前として正しいものは？", choices: ["糸へん", "組部", "纟部"], ans: "糸へん"},
-            {q: "「一期一会」という四字熟語の意味として正しいものは？", choices: ["一生に一度の出会いを大切にすること", "一度会ったら二度と会わないこと", "何度も繰り返し会うこと"], ans: "一生に一度の出会いを大切にすること"},
-            {q: "「心血を注ぐ」という慣用句の「心血」が表しているものはどれ？", choices: ["精一杯の努力や情熱", "自分の健康な体", "悲しい気持ち"], ans: "精一杯の努力や情熱"},
-            {q: "「前後」「高低」のように、反対の意味を表す漢字を組み合わせてできた熟語はどれ？", choices: ["強弱", "読書", "森林"], ans: "強弱"},
-            {q: "「険しい山」の「険」の正しい読み方はどれ？", choices: ["けん", "きん", "げん"], ans: "けん"},
-            {q: "文の組み立てで、主語に対する言葉（〜だ、〜する等）を何と言う？", choices: ["述語", "修飾語", "接続語"], ans: "述語"},
-            {q: "「あらかじめ」を漢字で書いたときの正しいものはどれ？", choices: ["予め", "有らかじめ", "定らかじめ"], ans: "予め"},
-            {q: "小学校で習う漢字を使った熟語「厳重」の「厳」の正しい読み方は？", choices: ["げん", "かん", "おん"], ans: "げん"},
-            {q: "二つの文をつなぐ「しかし」「だが」などの言葉を何と言う？", choices: ["逆接の接続語", "順接の接続語", "並列の接続語"], ans: "逆接の接続語"}
-        ]
+        "社会・歴史": {
+            normal: [
+                {q: "日本国憲法で、政治を行う基本原則の一つである「国民主権」「基本的人権の尊重」ともう一つは何？", choices: ["平和主義", "効率主義", "自由競争"], ans: "平和主義"},
+                {q: "645年に始まった、中大兄皇子や中臣鎌足らによる政治の改革を何と言う？", choices: ["大化の改新", "明治維新", "建武の新政"], ans: "大化の改新"},
+                {q: "奈良時代に聖武天皇によって建立された、世界最大級の青銅の仏像があるお寺の名前は？", choices: ["東大寺", "法隆寺", "清水寺"], ans: "東大寺"},
+                {q: "鎌倉幕府を開いた人物は誰？", choices: ["源頼朝", "源義経", "平清盛"], ans: "源頼朝"},
+                {q: "室町時代に京都の北山に建てられた、金箔が貼られた美しい建物の名前は？", choices: ["金閣寺", "銀閣寺", "東大寺"], ans: "金閣寺"}
+            ],
+            highClass: [
+                {q: "743年に出された、開墾した土地を永久に私有することを認める法令を何と言う？", choices: ["墾田永年私財法", "三世一身法", "公地公民制"], ans: "墾田永年私財法"},
+                {q: "室町時代、村ごとに自治が行われた組織を何と言う？", choices: ["惣村", "名主", "御家人"], ans: "惣村"},
+                {q: "江戸時代、五代将軍徳川綱吉が出した、生き物を大切にする法令の名称は？", choices: ["生類憐みの令", "武家諸法度", "御成敗式目"], ans: "生類憐みの令"}
+            ]
+        },
+        "理科": {
+            normal: [
+                {q: "植物が日光を受けて、二酸化炭素と水から養分と酸素を作り出す働きを何と言う？", choices: ["光合成", "呼吸", "蒸散"], ans: "光合成"},
+                {q: "ヒトの体で、血液を全身に送り出すポンプの役割をしている臓器はどれ？", choices: ["心臓", "肺", "胃"], ans: "心臓"},
+                {q: "月が太陽と地球の間に入り、太陽がかくされる現象を何と言う？", choices: ["日食", "月食", "満月"], ans: "日食"},
+                {q: "空気中で物が燃えるとき、燃えるのをはたらきかける気体はどれ？", choices: ["酸素", "二酸化炭素", "窒素"], ans: "酸素"},
+                {q: "植物の葉にある小さなすきまから、水分が水蒸気として出ていく現象を何と言う？", choices: ["蒸散", "光合成", "呼吸"], ans: "蒸散"}
+            ],
+            highClass: [
+                {q: "太陽の表面にある、周りより温度が低く黒く見える部分を何と言う？", choices: ["黒点", "プロミネンス", "コロナ"], ans: "黒点"},
+                {q: "飽和水蒸気量とは、空気1m³あたりに含むことができる最大の水蒸気量を表すが、温度が上がるとどうなる？", choices: ["大きくなる", "小さくなる", "変わらない"], ans: "大きくなる"},
+                {q: "地球の自転によって生じる、動いている物体が進行方向に対して右や左に曲げられるような力を何と言う？", choices: ["転向力（コリオリの力）", "遠心力", "万有引力"], ans: "転向力（コリオリの力）"}
+            ]
+        },
+        "算数": {
+            normal: [
+                {q: "半径が 7cm の円の面積を求める公式「半径×半径×円周率」で、円周率を3.14としたときの計算結果は？", choices: ["153.86cm²", "43.96cm²", "21.98cm²"], ans: "153.86cm²"},
+                {q: "時速60kmの自動車が、2時間30分に進む距離は何km？", choices: ["150km", "120km", "180km"], ans: "150km"},
+                {q: "点対称な図形について、対称の中心を通る直線で折ったとき、対応する点はどうなる？", choices: ["ぴったり重なる", "重ならない", "反対側に行く"], ans: "ぴったり重なる"},
+                {q: "縦4cm、横5cm、高さ3cmの直方体の体積は何cm³？", choices: ["60cm³", "12cm³", "40cm³"], ans: "60cm³"},
+                {q: "円周率を3.14としたとき、直径が10cmの円の周りの長さは何cm？", choices: ["31.4cm", "100cm", "3.14cm"], ans: "31.4cm"}
+            ],
+            highClass: [
+                {q: "底面の直径が10cm、高さが12cmの円柱の側面の面積（展開図の長方形の横の長さは円周とする）は何cm²？（円周率は3.14）", choices: ["376.8cm²", "120cm²", "314cm²"], ans: "376.8cm²"},
+                {q: "ある品物の定価を20%引きしたところ、1600円でした。元の定価は何円？", choices: ["2000円", "1920円", "1800円"], ans: "2000円"},
+                {q: "1から10までの数字が書かれたカードから1枚ひくとき、素数（2,3,5,7）が出る確率は？", choices: ["2/5", "1/2", "3/10"], ans: "2/5"}
+            ]
+        },
+        "国語・漢字": {
+            normal: [
+                {q: "漢字「偉大」の「偉」の正しい読み方は？", choices: ["い", "き", "え"], ans: "い"},
+                {q: "「一期一会」という四字熟語の意味として正しいものは？", choices: ["一生に一度の出会いを大切にすること", "一度会ったら二度と会わないこと", "何度も繰り返し会うこと"], ans: "一生に一度の出会いを大切にすること"},
+                {q: "「心血を注ぐ」という慣用句の「心血」が表しているものはどれ？", choices: ["精一杯の努力や情熱", "自分の健康な体", "悲しい気持ち"], ans: "精一杯の努力や情熱"},
+                {q: "「あらかじめ」を漢字で書いたときの正しいものはどれ？", choices: ["予め", "有らかじめ", "定らかじめ"], ans: "予め"},
+                {q: "次のうち、漢字の部首が「さんずい」ではないものはどれ？", choices: ["松", "治", "法"], ans: "松"}
+            ],
+            highClass: [
+                {q: "「鼎の軽重を問う」という故事成語の「鼎」の正しい読み方は？", choices: ["かなえ", "さかずき", "つぼ"], ans: "かなえ"},
+                {q: "「杜撰（ずさん）」の語源となった、杜默（ともく）という詩人の詩作態度から来ている言葉の意味は？", choices: ["いい加減で誤りが多いこと", "非常に厳格なこと", "とても美しいこと"], ans: "いい加減で誤りが多いこと"},
+                {q: "「阿吽の呼吸」の「阿」と「吽」は何を表す梵字（ぼんじ）か？", choices: ["始まりと終わり", "光と影", "太陽と月"], ans: "始まりと終わり"}
+            ]
+        }
     };
 
     let allies = 10;
@@ -163,10 +171,20 @@
     let highScore = localStorage.getItem("patapon_highscore") || 0;
     let currentQ = null;
     let bonusGiven = false;
+    let isHighClassMode = false;
+    let hasBoughtThisTurn = false;
 
-    let activeQuestions = {};
+    let activeQuestions = {
+        "社会・歴史": [], "理科": [], "算数": [], "国語・漢字": []
+    };
+
     function resetQuestionsPool() {
-        activeQuestions = JSON.parse(JSON.stringify(allQuestions));
+        for(let key in allQuestions) {
+            activeQuestions[key] = {
+                normal: [...allQuestions[key].normal],
+                highClass: [...allQuestions[key].highClass]
+            };
+        }
     }
     resetQuestionsPool();
 
@@ -218,21 +236,25 @@
     function startQuiz() {
         if (allies <= 0 || enemies <= 0) return;
         let sub = document.getElementById("subjectSelect").value;
+        let pool = isHighClassMode ? activeQuestions[sub].highClass : activeQuestions[sub].normal;
         
-        if (!activeQuestions[sub] || activeQuestions[sub].length === 0) {
-            activeQuestions[sub] = JSON.parse(JSON.stringify(allQuestions[sub]));
+        if (pool.length === 0) {
+            activeQuestions[sub].normal = [...allQuestions[sub].normal];
+            activeQuestions[sub].highClass = [...allQuestions[sub].highClass];
+            pool = isHighClassMode ? activeQuestions[sub].highClass : activeQuestions[sub].normal;
         }
 
-        let list = activeQuestions[sub];
-        let index = Math.floor(Math.random() * list.length);
-        currentQ = list.splice(index, 1)[0];
+        let index = Math.floor(Math.random() * pool.length);
+        currentQ = pool.splice(index, 1)[0];
 
         document.getElementById("quizArea").style.display = "none";
         document.getElementById("questionArea").style.display = "block";
+        document.getElementById("highClassBadge").style.display = isHighClassMode ? "block" : "none";
         document.getElementById("questionText").innerText = currentQ.q;
 
+        let shuffledChoices = [...currentQ.choices].sort(() => Math.random() - 0.5);
         let choicesHtml = "";
-        currentQ.choices.forEach(choice => {
+        shuffledChoices.forEach(choice => {
             choicesHtml += `<button class="choice-btn" onclick="answerQuiz('${choice}')">${choice}</button>`;
         });
         document.getElementById("choicesArea").innerHTML = choicesHtml;
@@ -240,21 +262,37 @@
     }
 
     function answerQuiz(selected) {
-        if (selected === currentQ.ans) {
-            enemies--;
-            score += 100;
-            streak++;
-            if (streak >= 2) {
-                document.getElementById("feverIndicator").style.display = "block";
+        let isCorrect = (selected === currentQ.ans);
+        
+        if (isHighClassMode) {
+            if (isCorrect) {
+                score += 400;
+                enemies = Math.max(0, enemies - 1);
+                document.getElementById("logText").innerHTML = "🌟 <span style='color:#00ff80;'>天才！+400pt獲得！敵を1匹撃破！</span>";
+            } else {
+                score -= 300;
+                allies = Math.max(0, allies - 1);
+                document.getElementById("logText").innerHTML = "💥 <span style='color:#ff0055;'>撃沈…-300pt！味方が1匹倒れた！（正解: " + currentQ.ans + "）</span>";
             }
-            document.getElementById("logText").innerHTML = "⭕ <span style='color:#00ff80;'>大正解！敵が1匹消滅した！</span>";
+            isHighClassMode = false;
         } else {
-            allies--;
-            score = Math.max(0, score - 30);
-            streak = 0;
-            document.getElementById("feverIndicator").style.display = "none";
-            document.getElementById("logText").innerHTML = "❌ <span style='color:#ff0055;'>不正解…味方が1匹倒れた！（正解: " + currentQ.ans + "）</span>";
+            if (isCorrect) {
+                enemies--;
+                score += 100;
+                streak++;
+                document.getElementById("feverIndicator").style.display = (streak >= 2) ? "block" : "none";
+                document.getElementById("logText").innerHTML = "⭕ <span style='color:#00ff80;'>大正解！敵が1匹消滅した！</span>";
+            } else {
+                allies--;
+                score -= 30;
+                streak = 0;
+                document.getElementById("feverIndicator").style.display = "none";
+                document.getElementById("logText").innerHTML = "❌ <span style='color:#ff0055;'>不正解…味方が1匹倒れた！（正解: " + currentQ.ans + "）</span>";
+            }
         }
+
+        hasBoughtThisTurn = false;
+        document.getElementById("shopLog").innerText = "";
 
         if (score > highScore) {
             highScore = score;
@@ -268,24 +306,45 @@
 
     function buyItem(type) {
         let shopLog = document.getElementById("shopLog");
+        
+        if (score <= 0) {
+            shopLog.innerText = "借金中だから買い物はできないよ！自力で稼いで！";
+            return;
+        }
+
+        if (hasBoughtThisTurn) {
+            shopLog.innerText = "このターンはもう買い物したよ！次のクイズに挑戦してね！";
+            return;
+        }
+
         if (type === 'arch' && score >= 100) {
             score -= 100;
             enemies = Math.max(0, enemies - 1);
             shopLog.innerText = "🏹 遠隔攻撃支援で敵を1匹撃破！";
+            hasBoughtThisTurn = true;
         } else if (type === 'shield' && score >= 150) {
             if (allies < 10) {
                 score -= 150;
                 allies++;
                 shopLog.innerText = "🛡️ 味方が1匹復帰した！";
+                hasBoughtThisTurn = true;
             } else {
                 shopLog.innerText = "仲間は全員生きているぞ！";
+                return;
             }
         } else if (type === 'horse' && score >= 200) {
             score -= 200;
             enemies = Math.max(0, enemies - 2);
             shopLog.innerText = "🐎 突撃支援で敵を2匹撃破！";
+            hasBoughtThisTurn = true;
+        } else if (type === 'edison' && score >= 100) {
+            score -= 100;
+            isHighClassMode = true;
+            shopLog.innerText = "💡 エジソンの挑戦状を購入！次のクイズはハイクラスだ！";
+            hasBoughtThisTurn = true;
         } else {
             shopLog.innerText = "ポイントが足りないよ！";
+            return;
         }
         updateView();
     }
@@ -295,10 +354,13 @@
         enemies = 10;
         score = 0;
         streak = 0;
+        isHighClassMode = false;
+        hasBoughtThisTurn = false;
         bonusGiven = false;
         document.getElementById("feverIndicator").style.display = "none";
         resetQuestionsPool();
         document.getElementById("logText").innerText = "ゲームをリセットしました。";
+        document.getElementById("shopLog").innerText = "";
         updateView();
     }
 
