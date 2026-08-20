@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ピコピコ学習隊 vs うっかりモンスターズ</title>
+    <style>
+        body { background-color: #0b091a; color: #00f3ff; font-family: sans-serif; margin: 0; padding: 15px; }
+        h1, h2, h3 { color: #ffff00; text-align: center; text-shadow: 0 0 10px #ff5500; }
+        
+        /* 溶けてるFEVER文字のスタイル */
+        #feverIndicator { 
+            position: fixed; top: 10px; left: 15px; 
+            font-size: 60px; font-weight: 900; 
+            color: #ff0055; 
+            filter: url(#gooey); /* ここでリキッド効果を適用 */
+            display: none; z-index: 100;
+            pointer-events: none;
+            animation: moveFEVER 2s infinite alternate;
+        }
+        @keyframes moveFEVER { 
+            0% { transform: scale(1) rotate(-5deg); } 
+            100% { transform: scale(1.1) rotate(5deg); } 
+        }
+
+        .battlefield { background: linear-gradient(180deg, #150e26 0%, #05030a 100%); border: 3px solid #00f3ff; border-radius: 15px; display: flex; align-items: center; justify-content: space-around; padding: 15px; margin-bottom: 15px; }
+        .squad { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; width: 150px; }
+        .patapon { width: 24px; height: 24px; background: #000; border: 2px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 5px #fff; }
+        .eye { width: 6px; height: 6px; background: #fff; border-radius: 50%; }
+        .zigoton { width: 28px; height: 28px; background: #400; clip-path: polygon(50% 0%, 100% 30%, 80% 100%, 20% 100%, 0% 30%); display: flex; align-items: center; justify-content: center; color: #f00; font-size: 12px; border: 2px solid #f00; }
+        .dead { opacity: 0.15; filter: grayscale(1); }
+        .box { background: rgba(20, 15, 35, 0.95); border: 2px solid #ff007f; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
+        button { background: #ff007f; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; font-size: 14px; }
+        button:hover { background: #ff3399; }
+        .choice-btn { display: block; width: 100%; margin: 8px 0; background: #1f1b3c; border: 1px solid #00f3ff; color: #00f3ff; text-align: left; padding: 10px; border-radius: 6px; }
+        .choice-btn:hover { background: #00f3ff; color: #000; }
+        .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <!-- リキッド効果のためのSVGフィルター -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <filter id="gooey">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="gooey" />
+            </filter>
+        </defs>
+    </svg>
+
+    <div id="feverIndicator">FEVER!</div>
+
+    <h1>🥁 ピコピコ学習隊 vs うっかりモンスターズ</h1>
+    <div style="text-align: center; margin-bottom: 10px;">
+        🏆 <span id="highScoreText">最高得点: 0 pt</span> ｜ ⭐ 現在のスコア: <span id="scoreText">0 pt</span>
+    </div>
+
+    <div class="battlefield">
+        <div style="text-align: center;">
+            <div style="color: #00f3ff; font-weight: bold; margin-bottom: 5px;">🛡️ 学習隊 (<span id="allyCount">10</span>/10)</div>
+            <div class="squad" id="allySquad"></div>
+        </div>
+        <div style="font-size: 20px; font-weight: bold; color: #ff007f;">VS</div>
+        <div style="text-align: center;">
+            <div style="color: #ff6666; font-weight: bold; margin-bottom: 5px;">👹 モンスター (<span id="enemyCount">10</span>/10)</div>
+            <div class="squad" id="enemySquad"></div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button onclick="switchTab('quiz')">📚 クイズバトル</button>
+        <button onclick="switchTab('shop')">🛒 手助けショップ</button>
+    </div>
+
+    <div id="quizTab" class="box">
+        <div id="quizArea">
+            <label>教科を選択：</label>
+            <select id="subjectSelect" style="padding: 5px; background: #0b091a; color: #fff; border: 1px solid #00f3ff;">
+                <option value="社会・歴史">社会・歴史</option>
+                <option value="理科">理科</option>
+                <option value="算数">算数</option>
+                <option value="国語・漢字">国語・漢字</option>
+            </select>
+            <br><br>
+            <button onclick="startQuiz()">👹 クイズを出題してもらう！</button>
+        </div>
+        <div id="questionArea" style="display:none;">
+            <p id="questionText" style="font-weight: bold; font-size: 16px;"></p>
+            <div id="choicesArea"></div>
+        </div>
+        <p id="logText" style="margin-top: 10px; font-weight: bold; color: #ffff55;"></p>
+    </div>
+
+    <div id="shopTab" class="box" style="display:none;">
+        <h3>🛒 手助けショップ（訓練所）</h3>
+        <p>スコアを使って部隊を支援しよう！</p>
+        <button onclick="buyItem('arch')">🏹 遠隔攻撃支援 (100pt)</button>
+        <button onclick="buyItem('shield')">🛡️ 仲間の復帰支援 (150pt)</button>
+        <button onclick="buyItem('horse')">🐎 突撃支援・敵2匹撃破 (200pt)</button>
+        <p id="shopLog" style="color: #00ff80; font-weight: bold;"></p>
+    </div>
+
+    <div style="text-align: center;">
+        <button onclick="resetGame()" style="background: #555;">🔄 最初からやり直す</button>
+    </div>
+
+<script>
+    const allQuestions = {
+        "社会・歴史": [
+            {q: "日本国憲法で、政治を行う基本原則の一つである「国民主権」「基本的人権の尊重」ともう一つは何？", choices: ["平和主義", "効率主義", "自由競争"], ans: "平和主義"},
+            {q: "衆議院と参議院の両方で成り立っている、法律を作る機関を何と言う？", choices: ["国会", "内閣", "裁判所"], ans: "国会"},
+            {q: "裁判所が持つ、法律や条令が憲法に違反していないかなどを判断する権利を何と言う？", choices: ["司法権", "立法権", "行政権"], ans: "司法権"},
+            {q: "縄文時代のあとに続き、大陸から稲作が伝わった時代の名前は？", choices: ["弥生時代", "古墳時代", "飛鳥時代"], ans: "弥生時代"},
+            {q: "聖徳太子が作った、役人の心構えや道徳を示した17のきまりを何と言う？", choices: ["十七条憲法", "冠位十二階", "大化の改新"], ans: "十七条憲法"},
+            {q: "645年に始まった、中大兄皇子や中臣鎌足らによる政治の改革を何と言う？", choices: ["大化の改新", "明治維新", "建武の新政"], ans: "大化の改新"},
+            {q: "奈良時代に聖武天皇によって建立された、世界最大級の青銅の仏像があるお寺の名前は？", choices: ["東大寺", "法隆寺", "清水寺"], ans: "東大寺"},
+            {q: "794年に京都へ都を移した天皇は誰？", choices: ["桓武天皇", "聖武天皇", "明治天皇"], ans: "桓武天皇"},
+            {q: "聖武天皇が、仏教の力で国を護るために全国の国ごとに建てさせたお寺を何と言う？", choices: ["国分寺", "法隆寺", "東大寺"], ans: "国分寺"},
+            {q: "室町時代に京都の北山に建てられた、金箔が貼られた美しい建物の名前は？", choices: ["金閣寺", "銀閣寺", "東大寺"], ans: "金閣寺"}
+        ],
+        "理科": [
+            {q: "植物が日光を受けて、二酸化炭素と水から養分と酸素を作り出す働きを何と言う？", choices: ["光合成", "呼吸", "蒸散"], ans: "光合成"},
+            {q: "ヒトの体で、血液を全身に送り出すポンプの役割をしている臓器はどれ？", choices: ["心臓", "肺", "胃"], ans: "心臓"},
+            {q: "水溶液に溶けているものが、水から出てくるときに規則正しい形の固体になることを何と言う？", choices: ["結晶", "溶解", "飽和"], ans: "結晶"},
+            {q: "空気中で物が燃えるとき、燃えるのをはたらきかける気体はどれ？", choices: ["酸素", "二酸化炭素", "窒素"], ans: "酸素"},
+            {q: "リトマス紙を使って、アルカリ性を示すと何色に変わる？", choices: ["青色", "赤色", "黄色"], ans: "青色"},
+            {q: "月が太陽と地球の間に入り、太陽がかくされる現象を何と言う？", choices: ["日食", "月食", "満月"], ans: "日食"},
+            {q: "ヒトの消化器官で、食べた物を胃から送られてさらに消化・吸収を進める長くて細い管を何と言う？", choices: ["小腸", "大腸", "食道"], ans: "小腸"},
+            {q: "食塩などを水に溶かしたとき、溶かす前の全体の重さと、溶かした後の水溶液の重さはどうなる？", choices: ["変わらない", "軽くなる", "重くなる"], ans: "変わらない"},
+            {q: "水溶液にものを溶かしたとき、溶けているものの全体の重さを何と言う？", choices: ["質量", "体積", "密度"], ans: "質量"},
+            {q: "太陽系の中で、地球のすぐ外側（火星の次）を回っている、一番大きな惑星の名前は？", choices: ["木星", "土星", "金星"], ans: "木星"}
+        ],
+        "算数": [
+            {q: "半径が 7cm の円の面積を求める公式「半径×半径×円周率」で、円周率を3.14としたときの計算結果は？", choices: ["153.86cm²", "43.96cm²", "21.98cm²"], ans: "153.86cm²"},
+            {q: "時速60kmの自動車が、2時間30分に進む距離は何km？", choices: ["150km", "120km", "180km"], ans: "150km"},
+            {q: "分数のかけ算で、(2/3) × (3/4) の計算結果は？", choices: ["1/2", "6/7", "5/12"], ans: "1/2"},
+            {q: "分数的わり算で、(4/5) ÷ (2/3) の計算結果として正しいものは？", choices: ["6/5（1と1/5）", "8/15", "2/5"], ans: "6/5（1と1/5）"},
+            {q: "点対称な図形について、対称の中心を通る直線で折ったとき、対応する点はどうなる？", choices: ["ぴったり重なる", "重ならない", "反対側に行く"], ans: "ぴったり重なる"},
+            {q: "縦4cm、横5cm、高さ3cmの直方体の体積は何cm³？", choices: ["60cm³", "12cm³", "40cm³"], ans: "60cm³"},
+            {q: "20人のクラスで、男子が12人のとき、女子の割合は全体に対して何パーセント？", choices: ["40%", "60%", "50%"], ans: "40%"},
+            {q: "底辺が6cm、高さが5cmの三角形の面積は何cm²？", choices: ["15cm²", "30cm²", "11cm²"], ans: "15cm²"},
+            {q: "帯分数 2 と 1/3 を仮分数になおすとどうなる？", choices: ["7/3", "5/3", "6/3"], ans: "7/3"},
+            {q: "1.5L のジュースを 0.3Lずつコップに分けると、何杯分になる？", choices: ["5杯", "3杯", "4杯"], ans: "5杯"}
+        ],
+        "国語・漢字": [
+            {q: "漢字「偉大」の「偉」の正しい読み方は？", choices: ["い", "き", "え"], ans: "い"},
+            {q: "漢字「組織」の「組」の部首の名前として正しいものは？", choices: ["糸へん", "組部", "纟部"], ans: "糸へん"},
+            {q: "「一期一会」という四字熟語の意味として正しいものは？", choices: ["一生に一度の出会いを大切にすること", "一度会ったら二度と会わないこと", "何度も繰り返し会うこと"], ans: "一生に一度の出会いを大切にすること"},
+            {q: "「心血を注ぐ」という慣用句の「心血」が表しているものはどれ？", choices: ["精一杯の努力や情熱", "自分の健康な体", "悲しい気持ち"], ans: "精一杯の努力や情熱"},
+            {q: "「前後」「高低」のように、反対の意味を表す漢字を組み合わせてできた熟語はどれ？", choices: ["強弱", "読書", "森林"], ans: "強弱"},
+            {q: "「険しい山」の「険」の正しい読み方はどれ？", choices: ["けん", "きん", "げん"], ans: "けん"},
+            {q: "文の組み立てで、主語に対する言葉（〜だ、〜する等）を何と言う？", choices: ["述語", "修飾語", "接続語"], ans: "述語"},
+            {q: "「あらかじめ」を漢字で書いたときの正しいものはどれ？", choices: ["予め", "有らかじめ", "定らかじめ"], ans: "予め"},
+            {q: "小学校で習う漢字を使った熟語「厳重」の「厳」の正しい読み方は？", choices: ["げん", "かん", "おん"], ans: "げん"},
+            {q: "二つの文をつなぐ「しかし」「だが」などの言葉を何と言う？", choices: ["逆接の接続語", "順接の接続語", "並列の接続語"], ans: "逆接の接続語"}
+        ]
+    };
+
+    let allies = 10;
+    let enemies = 10;
+    let score = 0;
+    let streak = 0;
+    let highScore = localStorage.getItem("patapon_highscore") || 0;
+    let currentQ = null;
+    let bonusGiven = false;
+
+    let activeQuestions = {};
+    function resetQuestionsPool() {
+        activeQuestions = JSON.parse(JSON.stringify(allQuestions));
+    }
+    resetQuestionsPool();
+
+    function updateView() {
+        document.getElementById("scoreText").innerText = score + " pt";
+        document.getElementById("highScoreText").innerText = "最高得点: " + highScore + " pt";
+        document.getElementById("allyCount").innerText = allies;
+        document.getElementById("enemyCount").innerText = enemies;
+
+        let allyHtml = "";
+        for (let i = 0; i < 10; i++) {
+            allyHtml += `<div class="patapon ${i >= allies ? 'dead' : ''}"><div class="eye"></div></div>`;
+        }
+        document.getElementById("allySquad").innerHTML = allyHtml;
+
+        let enemyHtml = "";
+        for (let i = 0; i < 10; i++) {
+            enemyHtml += `<div class="zigoton ${i >= enemies ? 'dead' : ''}">👹</div>`;
+        }
+        document.getElementById("enemySquad").innerHTML = enemyHtml;
+
+        if (enemies <= 0) {
+            let bonusMsg = "";
+            if (allies === 10 && !bonusGiven) {
+                score += 30;
+                bonusGiven = true;
+                bonusMsg = " 🛡️ ノーダメージボーナス +30pt 達成！";
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("patapon_highscore", highScore);
+                }
+            }
+            document.getElementById("logText").innerHTML = "🎉 <span style='color:#00ff80;'>勝利！モンスターをすべて倒した！" + bonusMsg + "</span>";
+        } else if (allies <= 0) {
+            document.getElementById("logText").innerHTML = "💀 <span style='color:#ff0055;'>敗北…学習隊が全滅してしまった！</span>";
+        }
+    }
+
+    function switchTab(tab) {
+        if (tab === 'quiz') {
+            document.getElementById("quizTab").style.display = "block";
+            document.getElementById("shopTab").style.display = "none";
+        } else {
+            document.getElementById("quizTab").style.display = "none";
+            document.getElementById("shopTab").style.display = "block";
+        }
+    }
+
+    function startQuiz() {
+        if (allies <= 0 || enemies <= 0) return;
+        let sub = document.getElementById("subjectSelect").value;
+        
+        if (!activeQuestions[sub] || activeQuestions[sub].length === 0) {
+            activeQuestions[sub] = JSON.parse(JSON.stringify(allQuestions[sub]));
+        }
+
+        let list = activeQuestions[sub];
+        let index = Math.floor(Math.random() * list.length);
+        currentQ = list.splice(index, 1)[0];
+
+        document.getElementById("quizArea").style.display = "none";
+        document.getElementById("questionArea").style.display = "block";
+        document.getElementById("questionText").innerText = currentQ.q;
+
+        let choicesHtml = "";
+        currentQ.choices.forEach(choice => {
+            choicesHtml += `<button class="choice-btn" onclick="answerQuiz('${choice}')">${choice}</button>`;
+        });
+        document.getElementById("choicesArea").innerHTML = choicesHtml;
+        document.getElementById("logText").innerText = "";
+    }
+
+    function answerQuiz(selected) {
+        if (selected === currentQ.ans) {
+            enemies--;
+            score += 100;
+            streak++;
+            if (streak >= 2) {
+                document.getElementById("feverIndicator").style.display = "block";
+            }
+            document.getElementById("logText").innerHTML = "⭕ <span style='color:#00ff80;'>大正解！敵が1匹消滅した！</span>";
+        } else {
+            allies--;
+            score = Math.max(0, score - 30);
+            streak = 0;
+            document.getElementById("feverIndicator").style.display = "none";
+            document.getElementById("logText").innerHTML = "❌ <span style='color:#ff0055;'>不正解…味方が1匹倒れた！（正解: " + currentQ.ans + "）</span>";
+        }
+
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem("patapon_highscore", highScore);
+        }
+
+        document.getElementById("questionArea").style.display = "none";
+        document.getElementById("quizArea").style.display = "block";
+        updateView();
+    }
+
+    function buyItem(type) {
+        let shopLog = document.getElementById("shopLog");
+        if (type === 'arch' && score >= 100) {
+            score -= 100;
+            enemies = Math.max(0, enemies - 1);
+            shopLog.innerText = "🏹 遠隔攻撃支援で敵を1匹撃破！";
+        } else if (type === 'shield' && score >= 150) {
+            if (allies < 10) {
+                score -= 150;
+                allies++;
+                shopLog.innerText = "🛡️ 味方が1匹復帰した！";
+            } else {
+                shopLog.innerText = "仲間は全員生きているぞ！";
+            }
+        } else if (type === 'horse' && score >= 200) {
+            score -= 200;
+            enemies = Math.max(0, enemies - 2);
+            shopLog.innerText = "🐎 突撃支援で敵を2匹撃破！";
+        } else {
+            shopLog.innerText = "ポイントが足りないよ！";
+        }
+        updateView();
+    }
+
+    function resetGame() {
+        allies = 10;
+        enemies = 10;
+        score = 0;
+        streak = 0;
+        bonusGiven = false;
+        document.getElementById("feverIndicator").style.display = "none";
+        resetQuestionsPool();
+        document.getElementById("logText").innerText = "ゲームをリセットしました。";
+        updateView();
+    }
+
+    updateView();
+</script>
+
+</body>
+</html>
